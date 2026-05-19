@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeRowsFromTargets, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const targets = ['集团管理', '医院管理', '院区管理', '中心管理', '科室管理', '病区管理', '部门管理', '组织机构启用 / 停用', '组织机构层级维护'];
+const rows = makeRowsFromTargets('SYS-ORG', '组织机构', '组织维护', targets, '系统管理员', ['维护集团', '维护医院', '维护院区', '维护中心', '维护科室', '维护病区', '维护部门', '启停组织', '调整层级']);
+const cfg = { title: '组织机构管理', subtitle: '维护集团、医院、院区、中心、科室、病区、部门，以及组织启停和层级关系。', flowText: '组织建模 -> 层级维护 -> 启停复核 -> 权限/排班引用', filters: [{ label: '组织类型', placeholder: '全部类型', type: 'select' as const, options: ['集团', '医院', '院区', '中心', '科室', '病区', '部门'] }, { label: '状态', placeholder: '全部状态', type: 'select' as const, options: ['启用', '停用', '待复核'] }, { label: '关键字', placeholder: '组织名称、编码、上级、负责人' }], stats: makeStats('组织功能项', rows), rows, columns: commonColumns, primaryAction: '新增/维护组织', primaryDialogTitle: '维护组织机构', primaryFields: [{ label: '组织名称', model: 'name' }, { label: '组织类型', model: 'type', type: 'select' as const, options: ['集团', '医院', '院区', '中心', '科室', '病区', '部门'] }, { label: '上级组织', model: 'parent' }, { label: '负责人', model: 'owner' }, { label: '启停状态', model: 'enabled', type: 'select' as const, options: ['启用', '停用', '待复核'] }, { label: '层级说明', model: 'treeMemo', type: 'textarea' as const }], reviewAction: '组织复核', reviewDialogTitle: '组织变更复核', reviewFields: [{ label: '复核结论', model: 'result', type: 'select' as const, options: ['通过', '退回', '停用'] }, { label: '影响范围', model: 'scope', type: 'textarea' as const }, { label: '影响说明', model: 'memo', type: 'textarea' as const }], traceTitle: '组织机构审计', traceRows: makeTrace('SYS-ORG', '组织机构管理'), traceColumns, closureTables: 'sys_org / sys_org_tree / sys_org_status_log / sys_position / sys_audit_log', closureText: '输入集团医院院区中心科室病区部门资料；输出组织树、启停状态、数据范围、排班引用和权限控制基础。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

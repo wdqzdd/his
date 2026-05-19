@@ -1,0 +1,20 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const rows = [
+  { id: 'INT-HIS-001', item: 'HIS患者信息接口', category: 'HIS', target: '患者主索引、身份、医保', status: '已完成', owner: '接口管理员', time: '2026-05-14 08:30', nextAction: '持续监测' },
+  { id: 'INT-HIS-002', item: 'HIS就诊信息接口', category: 'HIS', target: '门诊/住院就诊、就诊号', status: '处理中', owner: '接口管理员', time: '2026-05-14 09:10', nextAction: '核对就诊匹配' },
+  { id: 'INT-HIS-003', item: 'LIS检验结果接口', category: 'LIS', target: '检验报告、危急值、趋势', status: '已完成', owner: '检验接口员', time: '2026-05-14 09:40', nextAction: '复核危急值通知' },
+  { id: 'INT-HIS-004', item: 'PACS检查报告接口', category: 'PACS', target: '检查报告、影像链接', status: '关注', owner: '影像接口员', time: '2026-05-14 10:10', nextAction: '检查报告链接超时' },
+  { id: 'INT-HIS-005', item: 'EMR病历接口', category: 'EMR', target: '病历病程、签名文书', status: '已完成', owner: '病案接口员', time: '2026-05-14 10:40', nextAction: '持续同步' },
+  { id: 'INT-HIS-006', item: '药房系统接口', category: '药房', target: '药师审核、发药退药', status: '异常', owner: '药房接口员', time: '2026-05-14 11:20', nextAction: '重试发药回执' },
+  { id: 'INT-HIS-007', item: '物资系统接口', category: '物资', target: '耗材库存、批号、效期', status: '已完成', owner: '物资接口员', time: '2026-05-14 12:00', nextAction: '同步库存批号' },
+  { id: 'INT-HIS-008', item: '收费系统接口', category: '收费', target: '费用明细、欠费、结算', status: '待复核', owner: '收费接口员', time: '2026-05-14 13:10', nextAction: '核对重复计费' },
+  { id: 'INT-HIS-009', item: '医保结算回写接口', category: '收费', target: '医保限制、结算状态', status: '关注', owner: '收费接口员', time: '2026-05-14 14:00', nextAction: '核对医保返回码' },
+  { id: 'INT-HIS-010', item: '院内统一身份接口', category: 'HIS', target: '患者ID、就诊ID、住院号', status: '已完成', owner: '接口管理员', time: '2026-05-14 15:20', nextAction: '持续监测' },
+];
+const cfg = { title: '院内系统接口', subtitle: '管理 HIS 患者信息、HIS 就诊信息、LIS、PACS、EMR、药房、物资和收费接口通道、字段映射、失败重试和审计。', flowText: '院内接口 -> 字段映射 -> 同步入库 -> 异常处理', filters: [{ label: '接口系统', placeholder: '全部系统', type: 'select' as const, options: ['HIS患者信息', 'HIS就诊信息', 'LIS', 'PACS', 'EMR', '药房', '物资', '收费'] }, { label: '状态', placeholder: '全部状态', type: 'select' as const, options: ['在线', '异常', '停用', '待复核'] }, { label: '关键字', placeholder: '接口、字段、责任人' }], stats: makeStats('接口通道', rows), rows, columns: commonColumns, primaryAction: '维护接口', primaryDialogTitle: '维护院内接口', primaryFields: [{ label: '接口名称', model: 'name' }, { label: '接口地址', model: 'url' }, { label: '字段映射', model: 'mapping', type: 'textarea' as const }, { label: '业务绑定', model: 'binding', type: 'textarea' as const, placeholder: '患者ID、就诊ID、治疗记录、医嘱或费用明细绑定规则' }], reviewAction: '同步重试', reviewDialogTitle: '接口同步重试', reviewFields: [{ label: '失败编号', model: 'failId' }, { label: '处理方式', model: 'method', type: 'select' as const, options: ['立即重试', '人工修正', '忽略归档'] }, { label: '说明', model: 'memo', type: 'textarea' as const }], traceTitle: '院内接口同步日志', traceRows: makeTrace('INT-HIS', '院内系统接口'), traceColumns, closureTables: 'interface_channel / field_mapping / sync_log / retry_queue', closureText: '输入 HIS 患者/就诊、LIS、PACS、EMR、药房、物资和收费报文；输出患者资料、就诊绑定、检验/检查报告、费用药耗、失败重试和审计日志。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

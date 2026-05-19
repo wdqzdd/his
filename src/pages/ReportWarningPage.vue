@@ -1,0 +1,100 @@
+<script setup lang="ts">
+import ReportModuleView from './ReportModuleView.vue';
+import type { PageContext } from '../types';
+
+defineProps<{ context: PageContext }>();
+
+const filters = [
+  { label: '统计月份', placeholder: '选择月份', type: 'month' as const },
+  { label: '预警级别', placeholder: '全部级别', type: 'select' as const, options: ['一级', '二级', '三级'] },
+  { label: '预警来源', placeholder: '全部来源', type: 'select' as const, options: ['检验危急值', '治疗过程', '设备水质', '感控费用'] },
+  { label: '关键字', placeholder: '预警名称、责任人、状态' },
+];
+
+const rows = [
+  { id: 'WRN-RPT-001', metric: '预警事件总数', dimension: '本月', value: 126, target: '闭环管理', trend: '+14', status: '关注', source: 'warning_event', owner: '质量管理组', drill: 126, nextAction: '查看事件清单' },
+  { id: 'WRN-RPT-002', metric: '一级预警数', dimension: '危急/禁上机', value: 19, target: '及时处置', trend: '+3', status: '异常', source: 'warning_event', owner: '科室看板', drill: 19, nextAction: '下钻一级预警' },
+  { id: 'WRN-RPT-003', metric: '预警关闭率', dimension: '全部事件', value: '92.8%', target: '>=98%', trend: '-2.6%', status: '异常', source: 'warning_handle_log', owner: '责任工作站', drill: 34, nextAction: '催办未关闭' },
+  { id: 'WRN-RPT-004', metric: '平均处置时长', dimension: '一级预警', value: '26分钟', target: '<=30分钟', trend: '-4分钟', status: '正常', source: 'warning_handle_log', owner: '医务医事站', drill: 19, nextAction: '维持时效' },
+  { id: 'WRN-RPT-005', metric: '危急值预警', dimension: '检验科', value: 12, target: '100%确认', trend: '+2', status: '关注', source: 'lab_result, warning_event', owner: '检验科/医生站', drill: 12, nextAction: '确认未闭环' },
+  { id: 'WRN-RPT-006', metric: '透中低血压预警', dimension: '治疗过程', value: 31, target: '下降', trend: '+6', status: '异常', source: 'dialysis_monitor', owner: '护士站', drill: 31, nextAction: '生成护理CQI' },
+  { id: 'WRN-RPT-007', metric: '水质设备预警', dimension: '技师站', value: 8, target: '0未处理', trend: '+1', status: '关注', source: 'device_alert, water_quality_record', owner: '技师站', drill: 8, nextAction: '复测设备水质' },
+  { id: 'WRN-RPT-008', metric: '感控风险预警', dimension: '感控管理', value: 7, target: '及时整改', trend: '-2', status: '正常', source: 'infection_event', owner: '感控管理', drill: 7, nextAction: '查看整改' },
+  { id: 'WRN-RPT-009', metric: '费用风险提醒', dimension: '欠费患者', value: 23, target: '持续下降', trend: '+5', status: '异常', source: 'patient_fee_detail', owner: '导诊台/费用管理', drill: 23, nextAction: '通知导诊跟进' },
+  { id: 'WRN-RPT-010', metric: '居家异常上报', dimension: '患者端', value: 14, target: '12小时内审核', trend: '+4', status: '关注', source: 'home_event_report', owner: '随访团队', drill: 14, nextAction: '审核居家事件' },
+  { id: 'WRN-RPT-011', metric: '已处理预警', dimension: '本月', value: 92, target: '持续闭环', trend: '+10', status: '正常', source: 'warning_handle_log', owner: '责任工作站', drill: 92, nextAction: '查看处理记录' },
+  { id: 'WRN-RPT-012', metric: '未处理预警', dimension: '本月', value: 34, target: '0', trend: '+4', status: '异常', source: 'warning_event', owner: '员工主页', drill: 34, nextAction: '催办未处理预警' },
+  { id: 'WRN-RPT-013', metric: '超时预警', dimension: '超处理时限', value: 11, target: '0', trend: '+3', status: '异常', source: 'warning_event, warning_handle_log', owner: '质量管理组', drill: 11, nextAction: '升级责任人' },
+  { id: 'WRN-RPT-014', metric: '预警类型分布', dimension: '危急值/治疗/设备/感控/费用', value: '12/31/8/7/23', target: '结构分析', trend: '+6治疗', status: '关注', source: 'warning_event.warning_type', owner: '质量管理组', drill: 81, nextAction: '查看类型分布' },
+  { id: 'WRN-RPT-015', metric: '预警趋势', dimension: '近6个月', value: '103->112->98->121->126', target: '下降或稳定', trend: '+14', status: '关注', source: 'warning_event, report_snapshot', owner: '统计分析员', drill: 126, nextAction: '生成趋势分析' },
+];
+
+const stats = [
+  { label: '预警指标', value: rows.length, tone: 'blue' as const },
+  { label: '一级预警', value: 19, tone: 'red' as const },
+  { label: '关闭率', value: '92.8%', tone: 'orange' as const },
+  { label: '下钻事件', value: rows.reduce((sum, item) => sum + Number(item.drill), 0), tone: 'green' as const },
+  { label: '待催办', value: 34, tone: 'blue' as const },
+];
+
+const columns = [
+  { prop: 'metric', label: '指标名称', minWidth: 160, fixed: 'left' as const },
+  { prop: 'dimension', label: '统计维度', minWidth: 120 },
+  { prop: 'value', label: '指标值', width: 100 },
+  { prop: 'target', label: '目标', minWidth: 120 },
+  { prop: 'trend', label: '趋势', width: 90 },
+  { prop: 'status', label: '状态', width: 90, tag: true },
+  { prop: 'source', label: '来源表', minWidth: 190 },
+  { prop: 'owner', label: '责任方', minWidth: 130 },
+  { prop: 'drill', label: '下钻数', width: 90 },
+  { prop: 'nextAction', label: '下一步', minWidth: 150 },
+];
+
+const drillRows = [
+  { object: '预警', code: 'WAR-20260514-011', name: '透中低血压', source: 'dialysis_monitor', owner: '刘护士', status: '处理中' },
+  { object: '预警', code: 'WAR-20260514-019', name: '血钾危急值', source: 'lab_result', owner: '赵医生', status: '待复核' },
+  { object: '预警', code: 'WAR-20260514-022', name: '水质异常', source: 'water_quality_record', owner: '周技师', status: '异常' },
+  { object: '预警', code: 'WAR-20260514-031', name: '欠费提醒', source: 'patient_fee_detail', owner: '导诊台', status: '关注' },
+];
+const drillColumns = [
+  { prop: 'object', label: '对象', width: 90 },
+  { prop: 'code', label: '编号', minWidth: 150 },
+  { prop: 'name', label: '名称', minWidth: 140 },
+  { prop: 'source', label: '来源', minWidth: 160 },
+  { prop: 'owner', label: '责任人', width: 110 },
+  { prop: 'status', label: '状态', width: 100, tag: true },
+];
+</script>
+
+<template>
+  <ReportModuleView
+    title="预警统计"
+    subtitle="统计预警总数、已处理、未处理、超时、类型分布、趋势，以及危急值、透中风险、设备水质、感控、费用和居家异常预警的处置闭环。"
+    flow-text="预警触发 -> 责任处置 -> 复核关闭 -> 统计改进"
+    :filters="filters"
+    :stats="stats"
+    :rows="rows"
+    :columns="columns"
+    :drill-rows="drillRows"
+    :drill-columns="drillColumns"
+    snapshot-title="生成预警统计快照"
+    :snapshot-fields="[
+      { label: '统计周期', model: 'period', type: 'date', placeholder: '选择日期' },
+      { label: '预警范围', model: 'range', type: 'select', options: ['全部预警', '一级预警', '未关闭预警', '超时预警'], placeholder: '选择范围' },
+      { label: '闭环口径', model: 'standard', type: 'textarea', placeholder: '说明处置、复核和关闭统计口径' },
+    ]"
+    export-title="导出预警统计"
+    :export-fields="[
+      { label: '导出内容', model: 'content', type: 'select', options: ['汇总指标', '事件明细', '未关闭清单', '超时清单'], placeholder: '选择内容' },
+      { label: '用途', model: 'usage', type: 'select', options: ['晨会追踪', '质控会议', '院级上报'], placeholder: '选择用途' },
+    ]"
+    improvement-title="生成预警改进任务"
+    :improvement-fields="[
+      { label: '改进类型', model: 'type', type: 'select', options: ['一级预警超时', '关闭率不足', '低血压高发', '费用风险上升'], placeholder: '选择类型' },
+      { label: '责任人', model: 'owner', placeholder: '责任工作站或岗位' },
+      { label: '整改要求', model: 'task', type: 'textarea', placeholder: '填写处置、复核和关闭要求' },
+    ]"
+    closure-tables="warning_event / warning_handle_log / lab_result / dialysis_monitor"
+    closure-text="输入预警事件、预警分级、处置记录、处理时限、复核关闭和来源业务数据；输出预警统计快照、未处理/超时催办、类型趋势分析、责任工作站改进任务和看板风险入口。"
+  />
+</template>

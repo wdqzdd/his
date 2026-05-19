@@ -1,0 +1,71 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+
+defineProps<{ context: PageContext }>();
+
+const rows = [
+  { id: 'CRC-PROJ-001', trialName: 'HD-CKD-01贫血研究', registerNo: 'CTR20260501', center: '总院区GCP中心', pi: '周主任', team: 'CRC钱/研究护士吴/研究药师赵', roleScope: 'PI/CRC/研究护士/研究药师', status: '入组中', permission: '授权患者只读', nextAction: '维护受试者筛选' },
+  { id: 'CRC-PROJ-002', trialName: 'HD-VASC-01通路器械研究', registerNo: 'CTR20260502', center: '东院区分中心', pi: '陈主任', team: 'CRC李/研究医生王', roleScope: 'PI/Sub-I/CRC', status: '启动中', permission: '待中心启动', nextAction: '项目启动复核' },
+  { id: 'CRC-PROJ-003', trialName: 'HD-QOL-02生活质量观察', registerNo: 'OBS20260503', center: '总院区GCP中心', pi: '刘主任', team: 'CRC孙/数据管理员何', roleScope: 'CRC/数据管理员', status: '入组中', permission: '脱敏共享', nextAction: '发布访视计划' },
+  { id: 'CRC-PROJ-004', trialName: 'HD-ANEMIA-01药物耐受研究', registerNo: 'CTR20260418', center: '南院区分中心', pi: '郑主任', team: 'CRC周/研究药师钱', roleScope: 'PI/药师/CRC', status: '暂停', permission: '暂停新增入组', nextAction: '申办方补充资料' },
+  { id: 'CRC-PROJ-005', trialName: 'HD-MBD-01钙磷管理研究', registerNo: 'CTR20260422', center: '总院区GCP中心', pi: '王主任', team: 'CRC马/研究护士胡', roleScope: 'PI/CRC/护士', status: '关闭', permission: '只读审计', nextAction: '导出归档' },
+  { id: 'CRC-PROJ-006', trialName: 'HD-DIAL-03透析充分性研究', registerNo: 'CTR20260506', center: '西院区分中心', pi: '赵主任', team: 'CRC何/数据管理员陈', roleScope: 'Sub-I/CRC/DM', status: '草稿', permission: '未授权临床数据', nextAction: '注册新的药物临床试验' },
+  { id: 'CRC-PROJ-007', trialName: 'HD-WATER-01水质暴露研究', registerNo: 'OBS20260507', center: '总院区GCP中心', pi: '钱主任', team: 'CRC郭/技师宋', roleScope: 'PI/CRC/技师', status: '启动中', permission: '设备数据授权', nextAction: '配置项目权限' },
+  { id: 'CRC-PROJ-008', trialName: 'HD-NUTRI-01营养干预研究', registerNo: 'CTR20260508', center: '北院区分中心', pi: '孙主任', team: 'CRC刘/研究护士陈', roleScope: 'PI/CRC/护士', status: '入组中', permission: '患者端授权', nextAction: '同步招募清单' },
+  { id: 'CRC-PROJ-009', trialName: 'HD-DRUG-02联合用药研究', registerNo: 'CTR20260509', center: '总院区GCP中心', pi: '黄主任', team: 'CRC赵/研究药师李', roleScope: 'PI/药师/CRC/DM', status: '待复核', permission: '盲态权限待核', nextAction: '角色权限复核' },
+  { id: 'CRC-PROJ-010', trialName: 'HD-FOLLOW-01远程随访研究', registerNo: 'OBS20260510', center: '互联网随访中心', pi: '吴主任', team: 'CRC田/随访护士白', roleScope: 'PI/CRC/随访护士', status: '入组中', permission: '居家数据授权', nextAction: '维护中心任务' },
+];
+
+const columns = [
+  { prop: 'trialName', label: '药物临床试验名称', minWidth: 190, fixed: 'left' as const },
+  { prop: 'registerNo', label: '注册编号', minWidth: 130 },
+  { prop: 'center', label: '项目中心', minWidth: 150 },
+  { prop: 'pi', label: '主要研究者', width: 110 },
+  { prop: 'team', label: '研究团队', minWidth: 210 },
+  { prop: 'roleScope', label: '研究角色', minWidth: 170 },
+  { prop: 'status', label: '项目启停', width: 105, tag: true },
+  { prop: 'permission', label: '项目权限', minWidth: 150 },
+  { prop: 'nextAction', label: '下一步', minWidth: 150 },
+];
+
+const cfg = {
+  title: '项目管理',
+  subtitle: '注册新的药物临床试验，维护项目基本信息、项目中心、研究团队、研究角色、启停状态和项目权限。',
+  flowText: '项目注册 -> 中心启动 -> 团队角色授权 -> 受试者筛选',
+  filters: [
+    { label: '项目状态', placeholder: '全部状态', type: 'select' as const, options: ['草稿', '启动中', '入组中', '暂停', '关闭', '待复核'] },
+    { label: '项目中心', placeholder: '全部中心', type: 'select' as const, options: ['总院区GCP中心', '东院区分中心', '南院区分中心', '互联网随访中心'] },
+    { label: '关键字', placeholder: '试验名称、注册号、PI、团队成员' },
+  ],
+  stats: makeStats('研究项目', rows),
+  rows,
+  columns,
+  primaryAction: '注册试验',
+  primaryDialogTitle: '注册新的药物临床试验',
+  primaryFields: [
+    { label: '试验名称', model: 'trialName' },
+    { label: '注册编号', model: 'registerNo' },
+    { label: '项目基本信息', model: 'projectInfo', type: 'textarea' as const, placeholder: '方案编号、版本、申办方、研究类型' },
+    { label: '项目中心', model: 'center', type: 'select' as const, options: ['总院区GCP中心', '东院区分中心', '南院区分中心', '互联网随访中心'] },
+    { label: '研究团队', model: 'team', type: 'textarea' as const, placeholder: 'PI、Sub-I、CRC、研究护士、研究药师、数据管理员' },
+    { label: '研究角色', model: 'roles', type: 'textarea' as const, placeholder: '角色职责、盲态权限、数据范围' },
+    { label: '项目权限', model: 'permission', type: 'textarea' as const, placeholder: '授权患者、脱敏字段、临床/GCP分域边界' },
+  ],
+  reviewAction: '启停复核',
+  reviewDialogTitle: '项目启停与权限复核',
+  reviewFields: [
+    { label: '启停结论', model: 'status', type: 'select' as const, options: ['允许启动', '暂停入组', '恢复入组', '关闭项目', '退回补充'] },
+    { label: '权限复核', model: 'permissionReview', type: 'textarea' as const, placeholder: '核对项目权限、团队角色、授权患者和盲态访问' },
+    { label: '复核意见', model: 'memo', type: 'textarea' as const },
+  ],
+  traceTitle: '项目管理审计追溯',
+  traceRows: makeTrace('CRC-PROJ', '项目注册、中心启动、团队角色和权限'),
+  traceColumns,
+  closureTables: 'crc_project / crc_project_center / crc_project_member / crc_project_role / crc_project_permission',
+  closureText: '输入项目方案、伦理批件、申办方资料和研究团队；输出项目状态、中心启动、研究角色、项目权限和可进入受试者筛选的授权患者范围。',
+};
+</script>
+
+<template><FunctionModulePage v-bind="cfg" /></template>

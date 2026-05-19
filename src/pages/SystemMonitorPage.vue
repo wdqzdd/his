@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeRowsFromTargets, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const targets = ['服务状态监控', '接口状态监控', '设备连接状态监控', '数据同步状态监控', '存储空间监控', '系统性能监控'];
+const rows = makeRowsFromTargets('SYS-MON', '系统监控', '运行监控', targets, '运维管理员', ['查看服务状态', '查看接口状态', '查看设备连接', '查看同步状态', '查看存储容量', '查看性能指标']);
+const cfg = { title: '系统监控', subtitle: '监控服务状态、接口状态、设备连接、数据同步、存储空间和系统性能，支持告警处理和追溯。', flowText: '运行采集 -> 状态监控 -> 阈值告警 -> 运维处理 -> 关闭审计', filters: [{ label: '监控日期', placeholder: '选择日期', type: 'date' as const }, { label: '监控类型', placeholder: '全部类型', type: 'select' as const, options: ['服务状态', '接口状态', '设备连接', '数据同步', '存储空间', '系统性能'] }, { label: '告警等级', placeholder: '全部等级', type: 'select' as const, options: ['严重', '高', '中', '低', '正常'] }, { label: '关键字', placeholder: '服务、接口、设备、节点、告警' }], stats: makeStats('监控功能项', rows), rows, columns: commonColumns, primaryAction: '新建监控', primaryDialogTitle: '维护监控项', primaryFields: [{ label: '监控对象', model: 'target' }, { label: '监控类型', model: 'type', type: 'select' as const, options: ['服务状态', '接口状态', '设备连接', '数据同步', '存储空间', '系统性能'] }, { label: '阈值规则', model: 'threshold' }, { label: '采集频率', model: 'interval' }, { label: '告警策略', model: 'alert', type: 'textarea' as const }], reviewAction: '告警处理', reviewDialogTitle: '系统告警处理', reviewFields: [{ label: '处理方式', model: 'method', type: 'select' as const, options: ['重启服务', '重试同步', '重连设备', '扩容', '忽略', '升级'] }, { label: '影响业务', model: 'impact', type: 'textarea' as const }, { label: '处理说明', model: 'memo', type: 'textarea' as const }], traceTitle: '系统监控追溯', traceRows: makeTrace('SYS-MON', '系统监控'), traceColumns, closureTables: 'sys_service_status / integration_endpoint_status / device_connection_status / integration_sync_status / sys_storage_metric / sys_performance_metric / sys_alert_event / sys_operation_log', closureText: '输入服务、接口、设备、同步、存储和性能指标；输出监控告警、运维处理记录、容量趋势、业务影响和系统审计。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

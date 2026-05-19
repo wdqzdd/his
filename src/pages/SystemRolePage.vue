@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeRowsFromTargets, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const targets = ['角色管理', '权限配置', '菜单权限', '按钮权限', '数据权限', '工作站权限', '角色用户分配', '权限变更记录'];
+const rows = makeRowsFromTargets('SYS-ROLE', '角色权限', '授权管理', targets, '系统管理员', ['维护角色', '配置权限', '授权菜单', '授权按钮', '限定数据范围', '授权工作站', '分配用户', '查看变更']);
+const cfg = { title: '角色权限管理', subtitle: '维护角色、权限配置、菜单/按钮/数据/工作站权限、角色用户分配和权限变更记录。', flowText: '角色定义 -> 多维授权 -> 用户分配 -> 复核发布 -> 变更审计', filters: [{ label: '角色类型', placeholder: '全部类型', type: 'select' as const, options: ['临床', '护理', '技师', '药师', '管理', 'GCP'] }, { label: '权限类型', placeholder: '全部权限', type: 'select' as const, options: ['菜单权限', '按钮权限', '数据权限', '工作站权限'] }, { label: '状态', placeholder: '全部状态', type: 'select' as const, options: ['草稿', '待复核', '已发布', '已停用'] }, { label: '关键字', placeholder: '角色、用户、菜单、权限码' }], stats: makeStats('权限功能项', rows), rows, columns: commonColumns, primaryAction: '新增/维护角色', primaryDialogTitle: '维护角色与权限', primaryFields: [{ label: '角色名称', model: 'role' }, { label: '授权菜单', model: 'menus', type: 'textarea' as const }, { label: '按钮权限', model: 'buttons', type: 'textarea' as const }, { label: '数据范围', model: 'scope' }, { label: '工作站权限', model: 'stations', type: 'textarea' as const }, { label: '分配用户', model: 'users', type: 'textarea' as const }], reviewAction: '授权复核', reviewDialogTitle: '角色授权复核', reviewFields: [{ label: '复核结论', model: 'result', type: 'select' as const, options: ['发布', '退回', '停用'] }, { label: '影响用户', model: 'users', type: 'textarea' as const }, { label: '复核意见', model: 'memo', type: 'textarea' as const }], traceTitle: '权限变更记录', traceRows: makeTrace('SYS-ROLE', '角色权限管理'), traceColumns, closureTables: 'sys_role / sys_permission / sys_role_permission / sys_role_user / sys_role_workstation / sys_permission_change_log', closureText: '输入岗位职责、用户和工作站菜单；输出角色权限、按钮权限、数据范围、工作站入口和授权审计。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

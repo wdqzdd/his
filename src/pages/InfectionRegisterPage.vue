@@ -1,0 +1,74 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+
+defineProps<{ context: PageContext }>();
+
+const rows = [
+  { id: 'IC-REG-001', checkProject: '手卫生检查', checker: '感控护士沈洁', checkedUser: '赵敏', checkTime: '2026-05-14 08:20', checkResult: '不合格', issue: '接触患者后未手消', rectification: '现场反馈并补训', status: '待整改', owner: '护士长', time: '2026-05-14 08:35', nextAction: '责任护士提交整改' },
+  { id: 'IC-REG-002', checkProject: '导管出口护理', checker: '感控专员', checkedUser: '周颖', checkTime: '2026-05-14 08:45', checkResult: '关注', issue: '敷贴边缘翘起', rectification: '更换敷贴并拍照留痕', status: '处理中', owner: '责任护士', time: '2026-05-14 09:00', nextAction: '复核出口照片' },
+  { id: 'IC-REG-003', checkProject: '导管连接操作', checker: '护士长', checkedUser: '何璐', checkTime: '2026-05-14 09:10', checkResult: '不合格', issue: '无菌屏障准备不完整', rectification: '重新培训连接SOP', status: '待复核', owner: '感控专员', time: '2026-05-14 09:30', nextAction: '检查培训签到' },
+  { id: 'IC-REG-004', checkProject: '导管断开操作', checker: '感控护士沈洁', checkedUser: '陈涛', checkTime: '2026-05-14 10:30', checkResult: '不合格', issue: '封管记录与医嘱不一致', rectification: '医护联合勘误', status: '异常', owner: '主诊医生', time: '2026-05-14 10:50', nextAction: '完成医嘱核对' },
+  { id: 'IC-REG-005', checkProject: '内瘘穿刺检查', checker: '护理组长', checkedUser: '林佳', checkTime: '2026-05-14 11:00', checkResult: '合格', issue: '无', rectification: '无', status: '已关闭', owner: '护理组长', time: '2026-05-14 11:10', nextAction: '进入合格率统计' },
+  { id: 'IC-REG-006', checkProject: '内瘘拔针检查', checker: '感控专员', checkedUser: '顾娜', checkTime: '2026-05-14 11:35', checkResult: '关注', issue: '止血时间记录不完整', rectification: '补录并复核签名', status: '待处理', owner: '责任护士', time: '2026-05-14 11:50', nextAction: '补录整改记录' },
+  { id: 'IC-REG-007', checkProject: '隔离透析标记', checker: '感控护士沈洁', checkedUser: '马丽责任组', checkTime: '2026-05-13 16:00', checkResult: '合格', issue: '无', rectification: '无', status: '已完成', owner: '感控专员', time: '2026-05-13 16:15', nextAction: '归档隔离记录' },
+  { id: 'IC-REG-008', checkProject: '感染筛查追踪', checker: '导诊护士', checkedUser: '潘德胜', checkTime: '2026-05-13 15:20', checkResult: '不合格', issue: '感染四项报告待补', rectification: '补检验申请并限制排班', status: '待整改', owner: '导诊护士', time: '2026-05-13 15:40', nextAction: '等待LIS回报' },
+  { id: 'IC-REG-009', checkProject: '设备表面消毒', checker: '设备技师', checkedUser: 'A区技师', checkTime: '2026-05-12 13:20', checkResult: '不合格', issue: '消毒剂浓度记录缺项', rectification: '补测浓度并复核设备放行', status: '待复核', owner: '设备技师', time: '2026-05-12 13:45', nextAction: '设备复核签名' },
+  { id: 'IC-REG-010', checkProject: '医疗废物处置', checker: '院感科', checkedUser: 'B区护理组', checkTime: '2026-05-12 17:20', checkResult: '关注', issue: '锐器盒接近满载', rectification: '更换锐器盒并培训', status: '已完成', owner: '护理组长', time: '2026-05-12 17:35', nextAction: '纳入培训统计' },
+];
+
+const columns = [
+  { prop: 'checkProject', label: '检查项目', minWidth: 150, fixed: 'left' as const },
+  { prop: 'checker', label: '检查人员', minWidth: 125 },
+  { prop: 'checkedUser', label: '被检查人员', minWidth: 125 },
+  { prop: 'checkTime', label: '检查时间', minWidth: 145 },
+  { prop: 'checkResult', label: '检查结果', width: 100, tag: true },
+  { prop: 'issue', label: '不合格项', minWidth: 170 },
+  { prop: 'rectification', label: '整改记录', minWidth: 180 },
+  { prop: 'status', label: '闭环状态', width: 100, tag: true },
+  { prop: 'owner', label: '责任人', width: 110 },
+  { prop: 'time', label: '登记时间', minWidth: 145 },
+  { prop: 'nextAction', label: '下一步', minWidth: 150 },
+];
+
+const cfg = {
+  title: '感控登记',
+  subtitle: '补齐检查项目、检查人员、被检查人员、检查时间、检查结果、不合格项和整改记录。',
+  flowText: '检查问题 -> 整改登记 -> 复查关闭 -> 事件归档',
+  filters: [
+    { label: '登记日期', placeholder: '选择日期', type: 'date' as const },
+    { label: '检查项目', placeholder: '全部项目', type: 'select' as const, options: ['手卫生检查', '导管出口护理', '导管连接操作', '导管断开操作', '内瘘穿刺检查', '内瘘拔针检查', '感染筛查追踪'] },
+    { label: '整改状态', placeholder: '全部状态', type: 'select' as const, options: ['待整改', '处理中', '待复核', '已完成', '已关闭'] },
+    { label: '关键字', placeholder: '检查人员、被检查人员、不合格项' },
+  ],
+  stats: makeStats('登记记录', rows),
+  rows,
+  columns,
+  primaryAction: '新增登记',
+  primaryDialogTitle: '新增感控登记',
+  primaryFields: [
+    { label: '检查项目', model: 'checkProject', type: 'select' as const, options: ['手卫生检查', '导管出口护理', '导管连接操作', '导管断开操作', '内瘘穿刺检查', '内瘘拔针检查'] },
+    { label: '检查人员', model: 'checker' },
+    { label: '被检查人员', model: 'checkedUser' },
+    { label: '检查时间', model: 'checkTime', type: 'date' as const },
+    { label: '检查结果', model: 'checkResult', type: 'select' as const, options: ['合格', '关注', '不合格'] },
+    { label: '不合格项', model: 'issue', type: 'textarea' as const },
+    { label: '整改记录', model: 'rectification', type: 'textarea' as const },
+  ],
+  reviewAction: '复查关闭',
+  reviewDialogTitle: '整改复查关闭',
+  reviewFields: [
+    { label: '复查结论', model: 'result', type: 'select' as const, options: ['通过关闭', '继续整改', '升级CQI', '生成培训'] },
+    { label: '复查人员', model: 'reviewer' },
+    { label: '复查意见', model: 'memo', type: 'textarea' as const },
+  ],
+  traceTitle: '感控登记追溯',
+  traceRows: makeTrace('IC-REG', '感控登记'),
+  traceColumns,
+  closureTables: 'infection_check / infection_issue / infection_rectification / infection_review_log',
+  closureText: '输入感控检查和感染线索；输出整改记录、复查关闭、培训联动、院感统计和看板/员工主页待办。',
+};
+</script>
+
+<template><FunctionModulePage v-bind="cfg" /></template>

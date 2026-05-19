@@ -1,0 +1,70 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+
+defineProps<{ context: PageContext }>();
+
+const rows = [
+  { id: 'CRC-SPC-001', subjectNo: 'S-001', visit: 'V0', collect: '待采集', process: '离心分装待执行', storage: '冻存-80℃待入库', transport: '未转运', destroy: '-', chainTrace: '采集前', status: '待处理', nextAction: '采集登记' },
+  { id: 'CRC-SPC-002', subjectNo: 'S-002', visit: 'V1', collect: '已采集', process: '已离心分装', storage: '已冻存', transport: '中心实验室已接收', destroy: '-', chainTrace: '链路完整', status: '已完成', nextAction: '归档确认' },
+  { id: 'CRC-SPC-003', subjectNo: 'S-008', visit: 'V4', collect: '已采集', process: '处理延迟', storage: '临时冷藏', transport: '待转运', destroy: '-', chainTrace: '链路偏差', status: '异常', nextAction: '偏差处理' },
+  { id: 'CRC-SPC-004', subjectNo: 'S-010', visit: 'EOT', collect: '不适用', process: '不适用', storage: '历史冻存', transport: '已转运', destroy: '待销毁', chainTrace: '销毁审批中', status: '待复核', nextAction: '标本销毁' },
+  { id: 'CRC-SPC-005', subjectNo: 'S-009', visit: 'V2', collect: '已采集', process: '已处理', storage: '样本库A-03', transport: '已转运', destroy: '-', chainTrace: '链路完整', status: '已完成', nextAction: '报告回写' },
+  { id: 'CRC-SPC-006', subjectNo: 'S-013', visit: 'V1', collect: '设备暴露样本已采集', process: '已过滤', storage: '冷藏2-8℃', transport: '待交接', destroy: '-', chainTrace: '交接待签名', status: '处理中', nextAction: '转运交接' },
+  { id: 'CRC-SPC-007', subjectNo: 'S-014', visit: 'V2', collect: '待采集', process: '待处理', storage: '待储存', transport: '未转运', destroy: '-', chainTrace: '采集前', status: '待处理', nextAction: '提醒采集' },
+  { id: 'CRC-SPC-008', subjectNo: 'S-015', visit: '远程', collect: '患者寄送样本', process: '待接收处理', storage: '未入库', transport: '快递转运中', destroy: '-', chainTrace: '运输中', status: '关注', nextAction: '接收确认' },
+  { id: 'CRC-SPC-009', subjectNo: 'S-016', visit: 'V0', collect: '已采集', process: '标签异常', storage: '隔离储存', transport: '暂停转运', destroy: '-', chainTrace: '身份核对异常', status: '异常', nextAction: '双人核对' },
+  { id: 'CRC-SPC-010', subjectNo: 'S-005', visit: 'V3', collect: '已采集', process: '已处理', storage: '样本库B-12', transport: '已转运', destroy: '剩余样本已销毁', chainTrace: '销毁完成', status: '已关闭', nextAction: '审计归档' },
+];
+
+const columns = [
+  { prop: 'subjectNo', label: '受试者编号', width: 120, fixed: 'left' as const },
+  { prop: 'visit', label: '访视', width: 90 },
+  { prop: 'collect', label: '标本采集', minWidth: 150 },
+  { prop: 'process', label: '标本处理', minWidth: 150 },
+  { prop: 'storage', label: '标本储存', minWidth: 150 },
+  { prop: 'transport', label: '标本转运', minWidth: 150 },
+  { prop: 'destroy', label: '标本销毁', minWidth: 130 },
+  { prop: 'chainTrace', label: '标本链追踪', minWidth: 150 },
+  { prop: 'status', label: '状态', width: 95, tag: true },
+  { prop: 'nextAction', label: '下一步', minWidth: 130 },
+];
+
+const cfg = {
+  title: '标本链管理',
+  subtitle: '管理研究标本采集、处理、储存、转运、销毁和标本链追踪，异常链路需偏差处理。',
+  flowText: '标本采集 -> 处理储存 -> 转运接收 -> 销毁/链路审计',
+  filters: [
+    { label: '采集日期', placeholder: '选择日期', type: 'date' as const },
+    { label: '标本状态', placeholder: '全部状态', type: 'select' as const, options: ['待采集', '已采集', '已处理', '已冻存', '待转运', '已转运', '待销毁', '已销毁'] },
+    { label: '关键字', placeholder: '受试者、标本、访视、链路' },
+  ],
+  stats: makeStats('标本记录', rows),
+  rows,
+  columns,
+  primaryAction: '标本登记',
+  primaryDialogTitle: '研究标本采集处理登记',
+  primaryFields: [
+    { label: '受试者编号', model: 'subjectNo' },
+    { label: '标本采集', model: 'collect', type: 'textarea' as const },
+    { label: '标本处理', model: 'process', type: 'textarea' as const },
+    { label: '标本储存', model: 'storage', type: 'textarea' as const },
+    { label: '标本转运', model: 'transport', type: 'textarea' as const },
+  ],
+  reviewAction: '链路/销毁复核',
+  reviewDialogTitle: '标本链路核对与销毁复核',
+  reviewFields: [
+    { label: '链路状态', model: 'chainStatus', type: 'select' as const, options: ['完整', '偏差', '身份异常', '丢失', '销毁完成'] },
+    { label: '标本销毁', model: 'destroy', type: 'textarea' as const, placeholder: '销毁原因、审批人、双人复核和时间' },
+    { label: '偏差处理', model: 'deviation', type: 'textarea' as const },
+  ],
+  traceTitle: '标本链审计',
+  traceRows: makeTrace('CRC-SPC', '标本采集、处理、储存、转运、销毁和链路追踪'),
+  traceColumns,
+  closureTables: 'crc_specimen / crc_specimen_process / crc_specimen_storage / crc_specimen_transport / crc_specimen_destroy / crc_specimen_chain',
+  closureText: '输入 SoA 标本计划和访视采集任务；输出标本采集、处理、储存、转运、销毁记录、偏差处理和完整标本链追踪。',
+};
+</script>
+
+<template><FunctionModulePage v-bind="cfg" /></template>

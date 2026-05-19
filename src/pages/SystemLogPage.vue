@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeRowsFromTargets, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const targets = ['登录日志', '操作日志', '修改日志', '删除日志', '导出日志', '接口日志', '设备采集日志', '异常日志', '定时任务日志'];
+const rows = makeRowsFromTargets('SYS-LOG', '系统日志', '审计日志', targets, '审计管理员', ['查看登录明细', '查看操作明细', '比对修改前后', '追踪删除原因', '导出审计', '查看接口报文', '查看设备采集', '处理异常', '查看任务执行']);
+const cfg = { title: '日志管理', subtitle: '查询登录、操作、修改、删除、导出、接口、设备采集、异常和定时任务日志，支持风险标记与审计导出。', flowText: '操作产生 -> 分类留痕 -> 风险标记 -> 审计导出 -> 闭环追溯', filters: [{ label: '日志日期', placeholder: '选择日期', type: 'date' as const }, { label: '日志类型', placeholder: '全部类型', type: 'select' as const, options: ['登录', '操作', '修改', '删除', '导出', '接口', '设备采集', '异常', '定时任务'] }, { label: '风险等级', placeholder: '全部等级', type: 'select' as const, options: ['高', '中', '低', '正常'] }, { label: '关键字', placeholder: '用户、模块、对象、终端、IP' }], stats: makeStats('日志功能项', rows), rows, columns: commonColumns, primaryAction: '导出日志', primaryDialogTitle: '导出审计日志', primaryFields: [{ label: '日志类型', model: 'type', type: 'select' as const, options: ['登录', '操作', '修改', '删除', '导出', '接口', '设备采集', '异常', '定时任务'] }, { label: '导出范围', model: 'range' }, { label: '脱敏规则', model: 'mask', type: 'select' as const, options: ['脱敏', '内部完整'] }, { label: '导出原因', model: 'reason', type: 'textarea' as const }], reviewAction: '风险标记', reviewDialogTitle: '日志风险标记', reviewFields: [{ label: '风险等级', model: 'grade', type: 'select' as const, options: ['高', '中', '低'] }, { label: '关联对象', model: 'entity' }, { label: '处理意见', model: 'memo', type: 'textarea' as const }], traceTitle: '日志审计追溯', traceRows: makeTrace('SYS-LOG', '日志管理'), traceColumns, closureTables: 'sys_login_log / sys_operation_log / sys_change_log / sys_delete_log / sys_export_log / integration_sync_log / device_collect_log / sys_exception_log / sys_job_log / sys_audit_log', closureText: '输入系统操作、接口报文、设备采集和定时任务行为；输出分类审计日志、风险标记、追溯证据和导出记录。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

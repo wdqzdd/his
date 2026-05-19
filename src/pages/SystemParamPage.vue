@@ -1,0 +1,10 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeRowsFromTargets, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const targets = ['基础参数配置', '业务参数配置', '登录安全配置', '密码规则配置', '文件上传配置', '附件存储配置', '系统开关配置'];
+const rows = makeRowsFromTargets('SYS-PAR', '系统参数', '参数配置', targets, '系统管理员', ['维护基础参数', '维护业务参数', '维护登录安全', '维护密码规则', '维护上传规则', '维护存储路径', '维护系统开关']);
+const cfg = { title: '系统参数管理', subtitle: '维护基础参数、业务参数、登录安全、密码规则、文件上传、附件存储和系统开关，发布前需仿真复核。', flowText: '参数维护 -> 仿真验证 -> 复核发布 -> 系统生效 -> 审计追踪', filters: [{ label: '参数分类', placeholder: '全部分类', type: 'select' as const, options: ['基础参数', '业务参数', '登录安全', '密码规则', '文件上传', '附件存储', '系统开关'] }, { label: '状态', placeholder: '全部状态', type: 'select' as const, options: ['草稿', '待复核', '已发布', '已停用'] }, { label: '关键字', placeholder: '参数编码、名称、值、影响模块' }], stats: makeStats('参数功能项', rows), rows, columns: commonColumns, primaryAction: '新增/维护参数', primaryDialogTitle: '维护系统参数', primaryFields: [{ label: '参数编码', model: 'code' }, { label: '参数分类', model: 'category', type: 'select' as const, options: ['基础参数', '业务参数', '登录安全', '密码规则', '文件上传', '附件存储', '系统开关'] }, { label: '参数值', model: 'value' }, { label: '生效范围', model: 'scope' }, { label: '影响说明', model: 'impact', type: 'textarea' as const }], reviewAction: '发布复核', reviewDialogTitle: '参数发布复核', reviewFields: [{ label: '仿真结果', model: 'test' }, { label: '复核结论', model: 'result', type: 'select' as const, options: ['发布', '退回', '停用'] }, { label: '回滚方案', model: 'rollback', type: 'textarea' as const }, { label: '意见', model: 'memo', type: 'textarea' as const }], traceTitle: '系统参数审计', traceRows: makeTrace('SYS-PAR', '系统参数管理'), traceColumns, closureTables: 'sys_param / sys_param_version / sys_security_policy / sys_file_upload_policy / sys_storage_config / sys_feature_switch / sys_audit_log', closureText: '输入系统运行参数、安全策略、上传存储和系统开关；输出发布版本、仿真结果、生效记录、回滚依据和参数审计。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

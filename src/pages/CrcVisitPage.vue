@@ -1,0 +1,68 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+
+defineProps<{ context: PageContext }>();
+
+const rows = [
+  { id: 'CRC-VIS-001', project: 'HD-CKD-01', subjectNo: 'S-001', visitName: 'V0筛选', formStatus: '待填写', sourceData: '检验/知情/基线评估', queryStatus: '无质疑', signStatus: '待签名', status: '待处理', owner: 'CRC钱', nextAction: '填写筛选表单' },
+  { id: 'CRC-VIS-002', project: 'HD-CKD-01', subjectNo: 'S-002', visitName: 'V1随机', formStatus: '填写中', sourceData: '随机号/首次发药/生命体征', queryStatus: '待核查', signStatus: '研究医生待签', status: '处理中', owner: 'CRC钱', nextAction: '提交研究医生复核' },
+  { id: 'CRC-VIS-003', project: 'HD-VASC-01', subjectNo: 'S-008', visitName: 'V4安全随访', formStatus: '待填写', sourceData: 'AE随访/标本转运', queryStatus: '无质疑', signStatus: '待签名', status: '待处理', owner: 'CRC李', nextAction: '预约访视' },
+  { id: 'CRC-VIS-004', project: 'HD-ANEMIA-01', subjectNo: 'S-009', visitName: 'V2疗效随访', formStatus: '已提交', sourceData: 'Hb/用药依从性/AE', queryStatus: '已关闭', signStatus: '已签名', status: '已完成', owner: 'CRC赵', nextAction: '归档访视' },
+  { id: 'CRC-VIS-005', project: 'HD-MBD-01', subjectNo: 'S-010', visitName: 'EOT退出', formStatus: '待补录', sourceData: '退出表/药物回收/总结', queryStatus: '超窗质疑', signStatus: 'PI待签', status: '异常', owner: 'CRC马', nextAction: '登记方案偏离' },
+  { id: 'CRC-VIS-006', project: 'HD-QOL-02', subjectNo: 'S-005', visitName: 'V3量表随访', formStatus: '未到窗口', sourceData: '生活质量量表', queryStatus: '无质疑', signStatus: '未开始', status: '关注', owner: 'CRC孙', nextAction: '等待窗口' },
+  { id: 'CRC-VIS-007', project: 'HD-WATER-01', subjectNo: 'S-013', visitName: 'V1暴露记录', formStatus: '待填写', sourceData: '水质/设备/透析参数', queryStatus: '待核查', signStatus: '待签名', status: '待处理', owner: 'CRC周', nextAction: '采集设备数据' },
+  { id: 'CRC-VIS-008', project: 'HD-NUTRI-01', subjectNo: 'S-014', visitName: 'V2营养评估', formStatus: '草稿', sourceData: '饮食记录/白蛋白', queryStatus: '无质疑', signStatus: '未开始', status: '草稿', owner: 'CRC吴', nextAction: '发送患者端任务' },
+  { id: 'CRC-VIS-009', project: 'HD-FOLLOW-01', subjectNo: 'S-015', visitName: 'Remote远程访视', formStatus: '待执行', sourceData: '居家评估/上传报告', queryStatus: '无质疑', signStatus: '待签名', status: '待处理', owner: 'CRC田', nextAction: '确认视频时间' },
+  { id: 'CRC-VIS-010', project: 'HD-DRUG-02', subjectNo: '待生成', visitName: 'V0预筛', formStatus: '未开始', sourceData: '合并用药/过敏史', queryStatus: '无质疑', signStatus: '未开始', status: '待处理', owner: 'CRC赵', nextAction: '完成筛选入组' },
+];
+
+const columns = [
+  { prop: 'project', label: '项目', width: 120, fixed: 'left' as const },
+  { prop: 'subjectNo', label: '受试者编号', width: 115 },
+  { prop: 'visitName', label: '访视', minWidth: 135 },
+  { prop: 'formStatus', label: '表单状态', width: 110, tag: true },
+  { prop: 'sourceData', label: '源数据', minWidth: 190 },
+  { prop: 'queryStatus', label: '质疑状态', width: 115, tag: true },
+  { prop: 'signStatus', label: '签名状态', width: 120, tag: true },
+  { prop: 'status', label: '状态', width: 95, tag: true },
+  { prop: 'owner', label: '责任人', width: 100 },
+  { prop: 'nextAction', label: '下一步', minWidth: 150 },
+];
+
+const cfg = {
+  title: '访视表单',
+  subtitle: '按 SoA 访视填写源数据表单，维护质疑、签名、补录、方案偏离和归档状态。',
+  flowText: '访视任务 -> 表单填写 -> 研究医生/PI签名 -> 质疑关闭 -> 归档',
+  filters: [
+    { label: '访视日期', placeholder: '选择日期', type: 'date' as const },
+    { label: '表单状态', placeholder: '全部状态', type: 'select' as const, options: ['未开始', '待填写', '填写中', '已提交', '待补录', '草稿'] },
+    { label: '关键字', placeholder: '项目、受试者、访视、源数据' },
+  ],
+  stats: makeStats('访视表单', rows),
+  rows,
+  columns,
+  primaryAction: '填写访视表单',
+  primaryDialogTitle: '填写访视表单',
+  primaryFields: [
+    { label: '访视名称', model: 'visitName' },
+    { label: '源数据', model: 'sourceData', type: 'textarea' as const },
+    { label: '表单内容', model: 'formContent', type: 'textarea' as const, placeholder: '记录访视采集数据、偏离说明和附件' },
+  ],
+  reviewAction: '签名/质疑',
+  reviewDialogTitle: '访视表单签名与质疑处理',
+  reviewFields: [
+    { label: '签名结论', model: 'signResult', type: 'select' as const, options: ['研究医生签名', 'PI签名', '退回补录'] },
+    { label: '质疑处理', model: 'queryResult', type: 'select' as const, options: ['无质疑', '发起质疑', '关闭质疑'] },
+    { label: '说明', model: 'memo', type: 'textarea' as const },
+  ],
+  traceTitle: '访视表单审计',
+  traceRows: makeTrace('CRC-VIS', '访视表单'),
+  traceColumns,
+  closureTables: 'crc_visit_record / crc_visit_form / crc_query / crc_signature / crc_audit_trail',
+  closureText: '输入 SoA 访视任务、源数据和附件；输出访视表单、质疑处理、研究签名、偏离记录和归档审计。',
+};
+</script>
+
+<template><FunctionModulePage v-bind="cfg" /></template>

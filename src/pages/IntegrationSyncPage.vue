@@ -1,0 +1,20 @@
+<script setup lang="ts">
+import FunctionModulePage from './FunctionModulePage.vue';
+import { commonColumns, makeStats, makeTrace, traceColumns } from './functionPageHelpers';
+import type { PageContext } from '../types';
+defineProps<{ context: PageContext }>();
+const rows = [
+  { id: 'INT-SYNC-001', item: '患者信息同步', category: '主数据同步', target: '患者主档、医保、联系人', status: '已完成', owner: '接口管理员', time: '2026-05-14 08:00', nextAction: '写入导诊患者档案' },
+  { id: 'INT-SYNC-002', item: '医嘱信息同步', category: '业务同步', target: '长期/临时/检验/药品医嘱', status: '处理中', owner: '接口管理员', time: '2026-05-14 08:20', nextAction: '核对医嘱状态' },
+  { id: 'INT-SYNC-003', item: '检验结果同步', category: '业务同步', target: 'LIS标准化结果、危急值', status: '已完成', owner: '检验接口员', time: '2026-05-14 08:40', nextAction: '回写医生站趋势' },
+  { id: 'INT-SYNC-004', item: '检查报告同步', category: '业务同步', target: 'PACS报告、影像链接', status: '关注', owner: '影像接口员', time: '2026-05-14 09:00', nextAction: '修正报告链接' },
+  { id: 'INT-SYNC-005', item: '药品目录同步', category: '目录同步', target: '药品编码、剂型、限制', status: '已完成', owner: '药房接口员', time: '2026-05-14 09:20', nextAction: '发布基础药品资料' },
+  { id: 'INT-SYNC-006', item: '耗材目录同步', category: '目录同步', target: '耗材编码、UDI、收费口径', status: '待复核', owner: '物资接口员', time: '2026-05-14 09:40', nextAction: '复核UDI映射' },
+  { id: 'INT-SYNC-007', item: '费用信息同步', category: '收费同步', target: '费用明细、欠费、结算状态', status: '异常', owner: '收费接口员', time: '2026-05-14 10:00', nextAction: '处理重复计费' },
+  { id: 'INT-SYNC-008', item: '同步日志', category: '审计日志', target: '成功、失败、重试、人工处理', status: '已完成', owner: '接口管理员', time: '2026-05-14 10:20', nextAction: '审计归档' },
+  { id: 'INT-SYNC-009', item: '同步异常记录', category: '异常队列', target: '患者匹配冲突 2 条', status: '待处理', owner: '接口管理员', time: '2026-05-14 10:40', nextAction: '人工匹配患者' },
+  { id: 'INT-SYNC-010', item: '设备采集同步', category: '设备同步', target: '体重、血压、透析机参数', status: '已完成', owner: '设备技师', time: '2026-05-14 11:00', nextAction: '写入治疗记录' },
+];
+const cfg = { title: '数据同步管理', subtitle: '统一查看患者信息、医嘱信息、检验结果、检查报告、药品目录、耗材目录、费用信息、同步日志和同步异常记录。', flowText: '同步任务 -> 异常队列 -> 人工处理 -> 审计归档', filters: [{ label: '同步日期', placeholder: '选择日期', type: 'date' as const }, { label: '同步类型', placeholder: '全部类型', type: 'select' as const, options: ['患者信息', '医嘱信息', '检验结果', '检查报告', '药品目录', '耗材目录', '费用信息', '设备采集', '同步异常'] }, { label: '关键字', placeholder: '任务编号、来源、目标' }], stats: makeStats('同步任务', rows), rows, columns: commonColumns, primaryAction: '新建同步', primaryDialogTitle: '新建数据同步任务', primaryFields: [{ label: '同步来源', model: 'source' }, { label: '目标模块', model: 'target' }, { label: '同步类型', model: 'type', type: 'select' as const, options: ['患者信息', '医嘱信息', '检验结果', '检查报告', '药品目录', '耗材目录', '费用信息', '设备采集'] }, { label: '同步条件', model: 'condition', type: 'textarea' as const }], reviewAction: '异常处理', reviewDialogTitle: '同步异常处理', reviewFields: [{ label: '异常原因', model: 'reason' }, { label: '处理方式', model: 'method', type: 'select' as const, options: ['重试', '修正', '人工匹配', '忽略', '升级'] }, { label: '处理说明', model: 'memo', type: 'textarea' as const }], traceTitle: '数据同步追溯', traceRows: makeTrace('INT-SYNC', '数据同步管理'), traceColumns, closureTables: 'sync_task / sync_log / sync_retry_queue / sync_exception_record / sync_audit_log', closureText: '输入接口和设备同步任务；输出患者、医嘱、检验、检查、药品目录、耗材目录、费用和设备采集数据，异常进入重试、人工处理和同步审计。' };
+</script>
+<template><FunctionModulePage v-bind="cfg" /></template>

@@ -1,0 +1,42 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { CircleCheck, Coin, Search, Tickets } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import type { PageContext } from '../types';
+
+const props = defineProps<{ context: PageContext }>();
+type Row = { id: string; patient: string; dialysisNo: string; useType: string; orderItem: string; material: string; lotNo: string; udi: string; quantity: string; amount: string; consumeStatus: string; chargeStatus: string; nextAction: string };
+const selectedId = ref('MUSE-001');
+const consumeDialogVisible = ref(false);
+const traceDrawerVisible = ref(false);
+const rows: Row[] = [
+  { id: 'MUSE-001', patient: '王建国', dialysisNo: 'HD-00038', useType: '透析耗材套餐', orderItem: '常规HD套餐', material: '透析器 FX80 + 管路', lotNo: 'DIAL260405', udi: 'UDI-M-200001', quantity: '1套', amount: '253.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '治疗记录引用' },
+  { id: 'MUSE-002', patient: '李秀英', dialysisNo: 'HD-00072', useType: '单项耗材', orderItem: '导管出口护理', material: '无菌敷贴', lotNo: 'DRS260201', udi: 'UDI-M-200006', quantity: '1片', amount: '12.00', consumeStatus: '待复核', chargeStatus: '待计费', nextAction: '批号确认' },
+  { id: 'MUSE-003', patient: '陈志强', dialysisNo: 'HD-00128', useType: '透析耗材套餐', orderItem: 'HD+HF套餐', material: '透析管路 + 血滤器', lotNo: 'LINE260118', udi: 'UDI-M-200004', quantity: '1套', amount: '385.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '归档' },
+  { id: 'MUSE-004', patient: '刘梦莹', dialysisNo: 'HD-00151', useType: '高值耗材', orderItem: '血液灌流', material: '血液灌流器 HA130', lotNo: 'HP260301', udi: 'UDI-M-200002', quantity: '1支', amount: '980.00', consumeStatus: '待扣减', chargeStatus: '待确认', nextAction: '同意书核对' },
+  { id: 'MUSE-005', patient: '马丽', dialysisNo: 'HD-00203', useType: '透析耗材套餐', orderItem: '隔离透析套餐', material: '隔离治疗包', lotNo: 'ISO260510', udi: 'UDI-M-200007', quantity: '1包', amount: '120.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '感控追溯' },
+  { id: 'MUSE-006', patient: '周庆', dialysisNo: 'HD-00218', useType: '单项耗材', orderItem: '常规HD', material: '动静脉穿刺针', lotNo: 'AVN260320', udi: 'UDI-M-200003', quantity: '2支', amount: '16.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '护理记录' },
+  { id: 'MUSE-007', patient: '何雪', dialysisNo: 'HD-00246', useType: '单项耗材', orderItem: '导管护理', material: '碘伏棉签', lotNo: 'IOD260422', udi: 'UDI-M-200005', quantity: '1包', amount: '8.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '导管记录' },
+  { id: 'MUSE-008', patient: '郭强', dialysisNo: 'HD-00277', useType: '设备耗材', orderItem: '设备配液', material: '透析液A液', lotNo: 'DFA260430', udi: 'UDI-M-200008', quantity: '1桶', amount: '65.00', consumeStatus: '接口待同步', chargeStatus: '待计费', nextAction: '设备回写' },
+  { id: 'MUSE-009', patient: '陈敏', dialysisNo: 'HD-00341', useType: '设备耗材', orderItem: '设备配液', material: '透析液B粉', lotNo: 'DFB260430', udi: 'UDI-M-200010', quantity: '1袋', amount: '28.00', consumeStatus: '已扣减', chargeStatus: '已计费', nextAction: '设备记录' },
+  { id: 'MUSE-010', patient: '孙海', dialysisNo: 'HD-00177', useType: '感控耗材', orderItem: '环境消毒', material: '消毒湿巾', lotNo: 'WIP260201', udi: 'UDI-M-200009', quantity: '1包', amount: '0.00', consumeStatus: '已扣减', chargeStatus: '不计费', nextAction: '感控记录' },
+];
+const currentRow = computed(() => rows.find((item) => item.id === selectedId.value) ?? rows[0]);
+const activeTables = ['material_consumption', 'material_inventory_flow', 'charge_detail', 'udi_trace'];
+const metrics = computed(() => [{ label: '消耗总数', value: rows.length, tone: 'blue' }, { label: '套餐使用', value: rows.filter((i) => i.useType === '透析耗材套餐').length, tone: 'green' }, { label: '高值耗材', value: rows.filter((i) => i.useType === '高值耗材').length, tone: 'red' }, { label: '待复核', value: rows.filter((i) => i.consumeStatus === '待复核').length, tone: 'orange' }, { label: '接口待同步', value: rows.filter((i) => i.consumeStatus === '接口待同步').length, tone: 'red' }]);
+function tagType(value: string): 'success' | 'warning' | 'danger' | 'info' { if (value === '已扣减' || value === '已计费' || value === '不计费') return 'success'; if (value.includes('待')) return 'warning'; if (value.includes('接口')) return 'danger'; return 'info'; }
+function selectRow(row: Row): void { selectedId.value = row.id; }
+function submitAction(message: string): void { ElMessage.success(message); }
+</script>
+
+<template>
+  <section class="stock-fee-page">
+    <el-card class="stock-work-card" shadow="never">
+      <template #header><div class="stock-header"><div><h2>{{ props.context.menuTitle }}</h2><p>按治疗记录自动生成透析耗材套餐和单项耗材消耗，确认 UDI、批号扣减和费用明细。</p></div><div class="stock-actions"><el-button type="primary" :icon="CircleCheck" @click="consumeDialogVisible = true">确认消耗</el-button><el-button :icon="Tickets" @click="traceDrawerVisible = true">UDI追溯</el-button><el-button :icon="Coin" @click="traceDrawerVisible = true">费用明细</el-button></div></div></template>
+      <el-form class="stock-filter" inline><el-form-item label="关键字"><el-input placeholder="患者、透析号、耗材、UDI" clearable /></el-form-item><el-form-item label="使用类型"><el-select placeholder="全部类型" clearable><el-option label="透析耗材套餐" value="透析耗材套餐" /><el-option label="单项耗材" value="单项耗材" /><el-option label="高值耗材" value="高值耗材" /><el-option label="设备耗材" value="设备耗材" /></el-select></el-form-item><el-form-item label="消耗状态"><el-select placeholder="全部状态" clearable><el-option label="已扣减" value="已扣减" /><el-option label="待复核" value="待复核" /><el-option label="接口待同步" value="接口待同步" /></el-select></el-form-item><el-form-item><el-button type="primary" :icon="Search">查询</el-button><el-button>重置</el-button></el-form-item></el-form>
+      <div class="stock-stat-grid"><el-card v-for="item in metrics" :key="item.label" :class="['stock-stat-card', item.tone]" shadow="never"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></el-card></div>
+      <el-table :data="rows" border stripe highlight-current-row row-key="id" @row-click="selectRow"><el-table-column prop="patient" label="患者" width="95" fixed="left" /><el-table-column prop="dialysisNo" label="透析号" width="110" /><el-table-column prop="useType" label="使用类型" width="120" /><el-table-column prop="orderItem" label="来源项目" min-width="130" /><el-table-column prop="material" label="耗材" min-width="150" /><el-table-column prop="lotNo" label="批号" width="110" /><el-table-column prop="udi" label="UDI" width="125" /><el-table-column prop="quantity" label="数量" width="80" /><el-table-column prop="amount" label="金额" width="90" /><el-table-column prop="consumeStatus" label="消耗" width="100"><template #default="{ row }"><el-tag :type="tagType(row.consumeStatus)">{{ row.consumeStatus }}</el-tag></template></el-table-column><el-table-column prop="chargeStatus" label="计费" width="90"><template #default="{ row }"><el-tag :type="tagType(row.chargeStatus)" effect="plain">{{ row.chargeStatus }}</el-tag></template></el-table-column><el-table-column prop="nextAction" label="下一步" min-width="120" /></el-table>
+    </el-card>    <el-dialog v-model="consumeDialogVisible" title="耗材消耗确认" width="620px"><el-form label-width="100px"><el-form-item label="患者"><el-input :model-value="currentRow.patient" disabled /></el-form-item><el-form-item label="耗材UDI"><el-input :model-value="`${currentRow.material} / ${currentRow.udi}`" disabled /></el-form-item><el-form-item label="确认结果"><el-radio-group model-value="done"><el-radio-button label="done">确认扣减</el-radio-button><el-radio-button label="hold">暂缓</el-radio-button></el-radio-group></el-form-item><el-form-item label="说明"><el-input type="textarea" :rows="3" placeholder="记录执行人、费用口径和异常说明" /></el-form-item></el-form><template #footer><el-button @click="consumeDialogVisible = false">取消</el-button><el-button type="primary" @click="consumeDialogVisible = false; submitAction('耗材消耗已确认')">确认消耗</el-button></template></el-dialog>
+    <el-drawer v-model="traceDrawerVisible" title="耗材费用与UDI追溯" size="520px"><el-descriptions :column="1" border><el-descriptions-item label="患者">{{ currentRow.patient }}</el-descriptions-item><el-descriptions-item label="使用类型">{{ currentRow.useType }}</el-descriptions-item><el-descriptions-item label="耗材">{{ currentRow.material }}</el-descriptions-item><el-descriptions-item label="UDI">{{ currentRow.udi }}</el-descriptions-item><el-descriptions-item label="金额">{{ currentRow.amount }}</el-descriptions-item><el-descriptions-item label="下一步">{{ currentRow.nextAction }}</el-descriptions-item></el-descriptions></el-drawer>
+  </section>
+</template>
