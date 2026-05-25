@@ -2,7 +2,9 @@
 import { computed, ref } from 'vue';
 import {
   CircleCheck,
+  DocumentAdd,
   DocumentChecked,
+  Download,
   EditPen,
   Files,
   Search,
@@ -40,6 +42,10 @@ const traceDrawerVisible = ref(false);
 const assignmentDrawerVisible = ref(false);
 const appointmentDialogVisible = ref(false);
 const reviewDialogVisible = ref(false);
+const hisImportDialogVisible = ref(false);
+const batchImportDialogVisible = ref(false);
+const exportDialogVisible = ref(false);
+const exportOptions = ref(['当前列表', '待补全患者']);
 const selectedRow = ref<PatientRow | null>(null);
 
 const tableMap = {
@@ -228,6 +234,18 @@ function openTrace(row: PatientRow): void {
   traceDrawerVisible.value = true;
 }
 
+function openHisImport(): void {
+  hisImportDialogVisible.value = true;
+}
+
+function openBatchImport(): void {
+  batchImportDialogVisible.value = true;
+}
+
+function openExportDialog(): void {
+  exportDialogVisible.value = true;
+}
+
 function submitAction(message: string): void {
   ElMessage.success(message);
 }
@@ -245,10 +263,12 @@ function submitAction(message: string): void {
           <div class="guide-actions">
             <el-button v-if="mode === 'owner'" type="primary" :icon="UserFilled" @click="openAssignment()">分配归属</el-button>
             <el-button v-else-if="mode === 'appointment'" type="primary" :icon="CircleCheck" @click="openAppointment()">发起申请</el-button>
-            <el-button v-else type="primary" :icon="UserFilled" @click="openPatient()">新增患者</el-button>
+            <el-button v-else type="primary" :icon="DocumentAdd" @click="openPatient()">新建患者</el-button>
+            <el-button v-if="mode === 'home'" :icon="Files" @click="openHisImport">HIS关联导入</el-button>
+            <el-button v-if="mode === 'home'" :icon="Upload" @click="openBatchImport">批量导入</el-button>
+            <el-button v-if="mode === 'home'" :icon="Download" @click="openExportDialog">导出</el-button>
             <el-button v-if="mode === 'appointment'" :icon="DocumentChecked" @click="openReview(rows[0])">预约审核</el-button>
             <el-button v-else :icon="CircleCheck" @click="openContract()">快速签约</el-button>
-            <el-button :icon="Upload">批量导入</el-button>
             <el-button :icon="DocumentChecked" @click="openTrace(rows[0])">建档追溯</el-button>
           </div>
         </div>
@@ -375,42 +395,108 @@ function submitAction(message: string): void {
       </el-row>
     </el-card>
 
-    <el-drawer v-model="patientDrawerVisible" title="患者建档信息" size="640px">
-      <el-form label-width="110px">
-        <el-form-item label="患者姓名">
-          <el-input :model-value="selectedRow?.name" placeholder="请输入患者姓名" />
-        </el-form-item>
-        <el-form-item label="证件号">
-          <el-input :model-value="selectedRow?.idCard" placeholder="请输入身份证或其他证件号" />
-        </el-form-item>
-        <el-form-item label="联系电话">
-          <el-input :model-value="selectedRow?.phone" placeholder="请输入联系电话" />
-        </el-form-item>
-        <el-form-item label="医保类型">
-          <el-select :model-value="selectedRow?.insurance" placeholder="请选择医保类型">
-            <el-option label="职工医保" value="职工医保" />
-            <el-option label="居民医保" value="居民医保" />
-            <el-option label="异地医保" value="异地医保" />
-            <el-option label="自费" value="自费" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="客户类型">
-          <el-select :model-value="selectedRow?.customerType" placeholder="请选择客户类型">
-            <el-option label="维持性血透" value="维持性血透" />
-            <el-option label="导管患者" value="导管患者" />
-            <el-option label="隔离透析" value="隔离透析" />
-            <el-option label="临时透析" value="临时透析" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="风险备注">
-          <el-input type="textarea" :rows="3" placeholder="感染标识、导管状态、医保异常或特殊沟通要求" />
-        </el-form-item>
+    <el-drawer v-model="patientDrawerVisible" title="导诊新建/编辑患者" size="860px">
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+        title="导诊工作台负责患者接入；此表单与患者中心“基本信息”同源，保存后进入患者主档、签约和归属分配。"
+      />
+      <el-form class="dialog-form" label-width="118px">
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="病案号" required><el-input :model-value="selectedRow?.no" placeholder="请输入病案号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="血透号"><el-input placeholder="系统自动生成或HIS带入" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="患者姓名" required><el-input :model-value="selectedRow?.name" placeholder="请输入患者姓名" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="性别/年龄"><el-input :model-value="selectedRow?.sexAge" placeholder="男 / 58岁" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="民族"><el-input placeholder="请输入民族" /></el-form-item></el-col>
+          <el-col :span="12">
+            <el-form-item label="证件类型">
+              <el-select model-value="中华人民共和国居民身份证" placeholder="请选择证件类型">
+                <el-option label="中华人民共和国居民身份证" value="中华人民共和国居民身份证" />
+                <el-option label="港澳台证件" value="港澳台证件" />
+                <el-option label="护照" value="护照" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12"><el-form-item label="证件号" required><el-input :model-value="selectedRow?.idCard" placeholder="请输入证件号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="手机号" required><el-input :model-value="selectedRow?.phone" placeholder="请输入手机号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="医保类型"><el-input :model-value="selectedRow?.insurance" placeholder="请输入医保类型" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="医保卡号"><el-input placeholder="请输入医保卡号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="首次血透日期"><el-input placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="首次入院日期"><el-input placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="最近入院日期"><el-input placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="责任医生"><el-input placeholder="归属分配后回写" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="责任护士"><el-input placeholder="归属分配后回写" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="主诊科室"><el-input placeholder="血液净化中心" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="教育程度"><el-input placeholder="请输入教育程度" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="职业"><el-input placeholder="请输入职业" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="婚姻状态"><el-input placeholder="请输入婚姻状态" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="身高(cm)"><el-input placeholder="请输入身高" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="过敏史"><el-input placeholder="请输入过敏史" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="药物过敏"><el-input placeholder="请输入药物过敏" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="患者标签"><el-input :model-value="selectedRow?.customerType" placeholder="请输入患者标签" /></el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="病情备注"><el-input type="textarea" :rows="3" placeholder="病情、感染标识、医保异常、沟通要求等" /></el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="附件"><el-input type="textarea" :rows="2" placeholder="身份证、医保凭证、外院透析资料等" /></el-form-item></el-col>
+        </el-row>
       </el-form>
       <div class="drawer-actions">
         <el-button @click="patientDrawerVisible = false">取消</el-button>
-        <el-button type="primary" :icon="CircleCheck" @click="submitAction('患者主档已保存，待签约确认')">保存建档</el-button>
+        <el-button type="primary" :icon="CircleCheck" @click="patientDrawerVisible = false; submitAction('患者主档已保存到患者中心，后续进入签约和归属分配')">保存建档</el-button>
       </div>
     </el-drawer>
+
+    <el-dialog v-model="hisImportDialogVisible" title="HIS关联导入" width="900px">
+      <el-form inline>
+        <el-form-item label="姓名"><el-input placeholder="姓名" clearable /></el-form-item>
+        <el-form-item label="证件号"><el-input placeholder="证件号" clearable /></el-form-item>
+        <el-form-item label="门诊/住院号"><el-input placeholder="门诊号 / 住院号" clearable /></el-form-item>
+        <el-form-item label="手机号"><el-input placeholder="手机号" clearable /></el-form-item>
+        <el-form-item><el-button type="primary" :icon="Search">查询HIS</el-button></el-form-item>
+      </el-form>
+      <el-table :data="patientRows.slice(0, 4)" border stripe>
+        <el-table-column prop="name" label="姓名" width="110" />
+        <el-table-column prop="sexAge" label="性别/年龄" width="110" />
+        <el-table-column prop="idCard" label="证件号" min-width="170" />
+        <el-table-column prop="phone" label="手机号" min-width="130" />
+        <el-table-column prop="insurance" label="医保" width="110" />
+        <el-table-column prop="status" label="匹配状态" width="110" />
+        <el-table-column label="操作" width="140" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="selectedRow = row; hisImportDialogVisible = false; submitAction('HIS患者已关联导入，进入导诊建档核验')">关联导入</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="hisImportDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="batchImportDialogVisible" title="批量导入患者" width="760px">
+      <el-alert type="info" show-icon :closable="false" title="支持Excel模板导入，成功数据进入患者中心，待复核和失败数据留在导诊工作台处理。" />
+      <el-form label-width="110px" class="dialog-form">
+        <el-form-item label="导入模板"><el-button :icon="Download">下载模板</el-button></el-form-item>
+        <el-form-item label="上传文件"><el-upload :auto-upload="false" :limit="1" drag><el-icon><Upload /></el-icon><div class="el-upload__text">拖拽文件到这里或点击上传</div></el-upload></el-form-item>
+        <el-form-item label="导入说明"><el-input type="textarea" :rows="4" model-value="姓名、性别、出生日期/年龄、证件号、手机号、医保类型、联系人、地址等字段均按患者基本信息口径导入。" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchImportDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="batchImportDialogVisible = false; submitAction('批量导入已完成，成功数据进入患者中心，异常行留在导诊工作台复核')">开始导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="exportDialogVisible" title="导出导诊接入数据" width="640px">
+      <el-checkbox-group v-model="exportOptions">
+        <el-checkbox label="当前列表" />
+        <el-checkbox label="待补全患者" />
+        <el-checkbox label="HIS导入差异" />
+        <el-checkbox label="批量导入失败明细" />
+        <el-checkbox label="建档追踪清单" />
+      </el-checkbox-group>
+      <template #footer>
+        <el-button @click="exportDialogVisible = false">取消</el-button>
+        <el-button type="primary" :icon="Download" @click="exportDialogVisible = false; submitAction(`导诊接入导出任务已生成：${exportOptions.join('、') || '当前列表'}`)">确认导出</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="contractDialogVisible" title="签约/续约服务" width="620px">
       <el-form label-width="110px">

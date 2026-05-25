@@ -23,6 +23,7 @@ const EmployeeDutyPage = defineAsyncComponent(() => import('./EmployeeDutyPage.v
 const EmployeeProfilePage = defineAsyncComponent(() => import('./EmployeeProfilePage.vue'));
 const GuideDeskPage = defineAsyncComponent(() => import('./GuideDeskPage.vue'));
 const GuidePatientPage = defineAsyncComponent(() => import('./GuidePatientPage.vue'));
+const GuideAdmissionPage = defineAsyncComponent(() => import('./GuideAdmissionPage.vue'));
 const GuideContractPage = defineAsyncComponent(() => import('./GuideContractPage.vue'));
 const GuideFollowNamePage = defineAsyncComponent(() => import('./GuideFollowNamePage.vue'));
 const GuideAssignmentPage = defineAsyncComponent(() => import('./GuideAssignmentPage.vue'));
@@ -200,11 +201,13 @@ const menuPageMap: Record<string, unknown> = {
 
   'guide-home': GuideDeskPage,
   'guide-patient': GuidePatientPage,
+  'guide-admission': GuideAdmissionPage,
   'guide-contract': GuideContractPage,
   'guide-follow-name': GuideFollowNamePage,
   'guide-owner': GuideAssignmentPage,
   'guide-appointment': GuideAppointmentPage,
   'guide-schedule': SchedulePreparationPage,
+  'guide-checkin': SchedulePreparationPage,
   'guide-consent': GuideConsentPage,
   'guide-share': GuideSharePage,
 

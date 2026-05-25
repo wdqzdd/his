@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Check, CircleCheck, DocumentAdd, Download, EditPen, Files, Message, Printer, Search, User, Warning } from '@element-plus/icons-vue';
+import { Check, CircleCheck, DocumentAdd, Download, EditPen, Files, Message, Printer, Search, Upload, User, Warning } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import type { PageContext } from '../types';
 
@@ -524,6 +524,13 @@ const dryWeightDialogVisible = ref(false);
 const longPlanEditing = ref(false);
 const vascularAccessFieldCount = ref(1);
 const recordDialogVisible = ref(false);
+const createdPatientRows = ref<PatientRecord[]>([]);
+const patientDrawerMode = ref<'create' | 'edit'>('create');
+const patientDrawerVisible = ref(false);
+const hisImportDialogVisible = ref(false);
+const batchImportDialogVisible = ref(false);
+const exportDialogVisible = ref(false);
+const exportOptions = ref(['当前列表', '筛选结果']);
 const combinedTreatmentDialogVisible = ref(false);
 const combinedTreatmentDialogMode = ref<'create' | 'edit'>('create');
 const combinedTreatmentEditingId = ref('');
@@ -990,7 +997,6 @@ const labReports = ref<LabReportRecord[]>([
   },
 ]);
 const basicEditing = ref(false);
-const patientDrawerVisible = ref(false);
 const contactDrawerVisible = ref(false);
 const certificateDrawerVisible = ref(false);
 const deathDialogVisible = ref(false);
@@ -1032,7 +1038,7 @@ type BasicInfoForm = Pick<
   attachments: string;
 };
 
-const rows: PatientRecord[] = [
+const seedRows: PatientRecord[] = [
   {
     no: 'P20260510001',
     name: '曹登桂',
@@ -1324,6 +1330,8 @@ const rows: PatientRecord[] = [
     nextAction: '身份核验',
   },
 ];
+
+const rows = computed(() => [...createdPatientRows.value, ...seedRows]);
 
 const supplementRows: SupplementRecord[] = [
   { category: '地址记录', content: '现住址：厦门市海沧区嵩屿街道；透析接送地址已核验', status: '已核验', owner: '导诊王敏', updatedAt: '2026-05-10 08:45', nextAction: '签约引用' },
@@ -2194,7 +2202,7 @@ const combinedTreatmentRows = ref<CombinedTreatmentRow[]>([
   },
 ]);
 
-const current = computed(() => selected.value ?? rows[0]);
+const current = computed(() => selected.value ?? rows.value[0]);
 const currentLabReports = computed(() => labReports.value.filter((item) => item.source === activeLabSource.value));
 const currentLabReport = computed(() => currentLabReports.value.find((item) => item.id === selectedLabReportId.value) ?? currentLabReports.value[0] ?? labReports.value[0]);
 
@@ -2495,7 +2503,70 @@ const makeBasicInfoForm = (patient: PatientRecord): BasicInfoForm => ({
   attachments: '身份证、医保凭证、外院透析资料',
 });
 
-const basicForm = ref<BasicInfoForm>(makeBasicInfoForm(current.value));
+function makeBlankBasicInfoForm(): BasicInfoForm {
+  return {
+    outpatientNo: '',
+    followNo: '',
+    name: '',
+    gender: '男',
+    age: '',
+    nation: '汉族',
+    idType: '中华人民共和国居民身份证',
+    idCard: '',
+    phone: '',
+    insurance: '',
+    insuranceNo: '',
+    firstDialysis: '',
+    firstAdmission: '',
+    latestAdmission: '',
+    doctor: '',
+    nurse: '',
+    hospitalDept: '血液净化中心',
+    education: '',
+    profession: '',
+    marriage: '',
+    bodyHeight: '',
+    allergy: '',
+    drugAllergy: '',
+    patientTags: '',
+    remark: '',
+    attachments: '',
+  };
+}
+
+function buildPatientFromBasicForm(form: BasicInfoForm, source: string): PatientRecord {
+  return {
+    no: form.followNo || `P${Date.now()}`,
+    name: form.name,
+    sexAge: `${form.gender} / ${form.age || '未填'}岁`,
+    gender: form.gender,
+    age: form.age || '0',
+    idCard: form.idCard,
+    phone: form.phone,
+    insurance: form.insurance || '待补充',
+    outpatientNo: form.outpatientNo || `OUT${Date.now()}`,
+    followNo: form.followNo || `SFG-${String(rows.value.length + 1).padStart(4, '0')}`,
+    customerType: '导诊建档',
+    followName: form.name,
+    ckdStage: '待评估',
+    treatmentStatus: '建档中',
+    firstDialysis: form.firstDialysis || '待补充',
+    hospitalDept: form.hospitalDept || '血液净化中心',
+    bodyHeight: form.bodyHeight || '待补充',
+    education: form.education || '待补充',
+    profession: form.profession || '待补充',
+    marriage: form.marriage || '待补充',
+    allergy: form.allergy || '无',
+    drugAllergy: form.drugAllergy || '无',
+    remark: `${form.remark || '导诊建档'}（来源：${source}）`,
+    status: source === 'HIS关联导入' ? '资料待补' : '建档中',
+    owner: current.value.owner,
+    updatedAt: '2026-05-25 18:00',
+    nextAction: source === 'HIS关联导入' ? '核验差异并签约' : '进入签约',
+  };
+}
+
+const basicForm = ref<BasicInfoForm>(makeBasicInfoForm(seedRows[0]));
 
 const diagnosisRows = ref<Record<string, DiagnosisRow[]>>(
   Object.fromEntries(
@@ -2623,6 +2694,22 @@ function selectRow(row: PatientRecord): void {
   selected.value = row;
   basicEditing.value = false;
   basicForm.value = makeBasicInfoForm(row);
+}
+
+function openCreatePatient(): void {
+  patientDrawerMode.value = 'create';
+  selected.value = null;
+  basicEditing.value = true;
+  basicForm.value = makeBlankBasicInfoForm();
+  patientDrawerVisible.value = true;
+}
+
+function openEditPatient(row: PatientRecord = current.value): void {
+  patientDrawerMode.value = 'edit';
+  selected.value = row;
+  basicEditing.value = true;
+  basicForm.value = makeBasicInfoForm(row);
+  patientDrawerVisible.value = true;
 }
 
 function toggleOrderTerm(term: 'long' | 'temp'): void {
@@ -3300,8 +3387,12 @@ function toggleDiagnosisEdit(row: DiagnosisRow): void {
 }
 
 function openPatient(row?: PatientRecord): void {
-  selected.value = row ?? current.value;
-  patientDrawerVisible.value = true;
+  if (row) {
+    openEditPatient(row);
+    return;
+  }
+
+  openCreatePatient();
 }
 
 function openContact(row?: PatientRecord): void {
@@ -3350,6 +3441,79 @@ function openDryWeightDialog(): void {
 
 function submitAction(message: string): void {
   ElMessage.success(message);
+}
+
+function savePatientDrawer(): void {
+  const record = buildPatientFromBasicForm(basicForm.value, patientDrawerMode.value === 'create' ? '人工建档' : '导诊编辑');
+
+  if (patientDrawerMode.value === 'create') {
+    createdPatientRows.value = [record, ...createdPatientRows.value];
+    selected.value = record;
+  } else if (selected.value) {
+    Object.assign(selected.value, record);
+    basicForm.value = makeBasicInfoForm(selected.value);
+  }
+
+  patientDrawerVisible.value = false;
+  basicEditing.value = false;
+  submitAction(`${patientDrawerMode.value === 'create' ? '患者建档' : '患者主档更新'}已保存，后续可继续签约、HIS关联或归属分配`);
+}
+
+function openHisImport(): void {
+  hisImportDialogVisible.value = true;
+}
+
+function openBatchImport(): void {
+  batchImportDialogVisible.value = true;
+}
+
+function openExportDialog(): void {
+  exportDialogVisible.value = true;
+}
+
+function importHisPatient(row: PatientRecord): void {
+  const next = buildPatientFromBasicForm(makeBasicInfoForm(row), 'HIS关联导入');
+  next.followNo = row.followNo;
+  next.outpatientNo = row.outpatientNo;
+  next.status = '资料待补';
+  next.nextAction = '核验差异并签约';
+  createdPatientRows.value = [next, ...createdPatientRows.value];
+  selected.value = next;
+  hisImportDialogVisible.value = false;
+  submitAction('HIS患者已关联导入到患者中心，等待资料核验和签约');
+}
+
+function confirmBatchImport(): void {
+  const nextRows = [
+    buildPatientFromBasicForm(
+      {
+        ...makeBlankBasicInfoForm(),
+        name: '批量导入患者',
+        gender: '女',
+        age: '57',
+        idCard: '440103196805120024',
+        phone: '13900001234',
+        insurance: '职工医保',
+        outpatientNo: `BULK-${Date.now()}`,
+        followNo: `SFG-B${String(rows.value.length + 1).padStart(4, '0')}`,
+        firstDialysis: '2026-05-25',
+        hospitalDept: '血液净化中心',
+        education: '中专',
+        profession: '退休',
+        marriage: '已婚',
+        allergy: '无',
+        drugAllergy: '无',
+        patientTags: '批量导入',
+        remark: 'Excel模板导入',
+        attachments: '导入清单',
+      },
+      'Excel批量导入',
+    ),
+  ];
+
+  createdPatientRows.value = [...nextRows, ...createdPatientRows.value];
+  batchImportDialogVisible.value = false;
+  submitAction('批量导入已完成，成功数据已进入患者中心，失败行可导出查看');
 }
 </script>
 
@@ -5727,40 +5891,116 @@ function submitAction(message: string): void {
       </template>
     </el-drawer>
 
-    <el-drawer v-model="patientDrawerVisible" title="新增/编辑患者主档" size="680px">
-      <el-form label-width="116px">
-        <el-form-item label="患者姓名"><el-input :model-value="selected?.name" placeholder="请输入患者姓名" /></el-form-item>
-        <el-form-item label="性别年龄">
-          <el-row :gutter="8">
-            <el-col :span="12">
-              <el-select :model-value="selected?.gender" placeholder="性别">
+    <el-drawer v-model="patientDrawerVisible" :title="patientDrawerMode === 'create' ? '新建患者' : '编辑患者基本信息'" size="860px">
+      <el-alert
+        type="info"
+        show-icon
+        :closable="false"
+        title="此表单与患者中心的“基本信息” tab 同源，人工建档、HIS关联导入和批量导入最终都会沉淀到同一份患者主档。"
+      />
+      <el-form class="dialog-form" label-width="118px">
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="病案号" required><el-input v-model="basicForm.outpatientNo" placeholder="请输入病案号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="血透号"><el-input v-model="basicForm.followNo" placeholder="系统自动生成或HIS带入" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="患者姓名" required><el-input v-model="basicForm.name" placeholder="请输入患者姓名" /></el-form-item></el-col>
+          <el-col :span="12">
+            <el-form-item label="性别">
+              <el-select v-model="basicForm.gender" placeholder="请选择性别">
                 <el-option label="男" value="男" />
                 <el-option label="女" value="女" />
               </el-select>
-            </el-col>
-            <el-col :span="12"><el-input placeholder="年龄" :model-value="selected?.age" /></el-col>
-          </el-row>
-        </el-form-item>
-        <el-form-item label="证件号"><el-input :model-value="selected?.idCard" placeholder="请输入身份证或其他证件号" /></el-form-item>
-        <el-form-item label="联系电话"><el-input :model-value="selected?.phone" placeholder="请输入联系电话" /></el-form-item>
-        <el-form-item label="地址记录"><el-input placeholder="户籍地址、现住址、透析接送地址" /></el-form-item>
-        <el-form-item label="门诊/住院号"><el-input :model-value="selected?.outpatientNo" placeholder="门诊号、住院号或外院来源号" /></el-form-item>
-        <el-form-item label="客户类型">
-          <el-select :model-value="selected?.customerType" placeholder="请选择客户类型">
-            <el-option label="维持性血透" value="维持性血透" />
-            <el-option label="导管患者" value="导管患者" />
-            <el-option label="隔离透析" value="隔离透析" />
-            <el-option label="临时透析" value="临时透析" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="院区科室床位"><el-input :model-value="selected?.hospitalDept" placeholder="院区 / 科室 / 病区 / 床位" /></el-form-item>
-        <el-form-item label="过敏及风险"><el-input type="textarea" :rows="3" :model-value="selected?.allergy" placeholder="过敏史、感染标识、导管状态、医保异常或沟通要求" /></el-form-item>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12"><el-form-item label="年龄"><el-input v-model="basicForm.age" placeholder="请输入年龄" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="民族"><el-input v-model="basicForm.nation" placeholder="请输入民族" /></el-form-item></el-col>
+          <el-col :span="12">
+            <el-form-item label="证件类型">
+              <el-select v-model="basicForm.idType" placeholder="请选择证件类型">
+                <el-option label="中华人民共和国居民身份证" value="中华人民共和国居民身份证" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12"><el-form-item label="证件号" required><el-input v-model="basicForm.idCard" placeholder="请输入证件号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="手机号" required><el-input v-model="basicForm.phone" placeholder="请输入手机号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="医保类型"><el-input v-model="basicForm.insurance" placeholder="请输入医保类型" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="医保卡号"><el-input v-model="basicForm.insuranceNo" placeholder="请输入医保卡号" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="首次血透日期"><el-input v-model="basicForm.firstDialysis" placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="首次入院日期"><el-input v-model="basicForm.firstAdmission" placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="最近入院日期"><el-input v-model="basicForm.latestAdmission" placeholder="YYYY-MM-DD" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="责任医生"><el-input v-model="basicForm.doctor" placeholder="请输入责任医生" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="责任护士"><el-input v-model="basicForm.nurse" placeholder="请输入责任护士" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="主诊科室"><el-input v-model="basicForm.hospitalDept" placeholder="请输入主诊科室" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="教育程度"><el-input v-model="basicForm.education" placeholder="请输入教育程度" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="职业"><el-input v-model="basicForm.profession" placeholder="请输入职业" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="婚姻状态"><el-input v-model="basicForm.marriage" placeholder="请输入婚姻状态" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="身高(cm)"><el-input v-model="basicForm.bodyHeight" placeholder="请输入身高" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="过敏史"><el-input v-model="basicForm.allergy" placeholder="请输入过敏史" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="药物过敏"><el-input v-model="basicForm.drugAllergy" placeholder="请输入药物过敏" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="患者标签"><el-input v-model="basicForm.patientTags" placeholder="请输入患者标签" /></el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="病情备注"><el-input v-model="basicForm.remark" type="textarea" :rows="3" placeholder="请输入病情备注" /></el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="附件"><el-input v-model="basicForm.attachments" type="textarea" :rows="2" placeholder="身份证、医保凭证、外院透析资料等" /></el-form-item></el-col>
+        </el-row>
       </el-form>
-      <div class="drawer-actions">
+      <template #footer>
         <el-button @click="patientDrawerVisible = false">取消</el-button>
-        <el-button type="primary" :icon="CircleCheck" @click="patientDrawerVisible = false; submitAction('患者主档已保存，等待资料核验或签约')">保存主档</el-button>
-      </div>
+        <el-button type="primary" :icon="CircleCheck" @click="savePatientDrawer">保存主档</el-button>
+      </template>
     </el-drawer>
+
+    <el-dialog v-model="hisImportDialogVisible" title="HIS关联导入" width="900px">
+      <el-form inline>
+        <el-form-item label="姓名"><el-input placeholder="姓名" clearable /></el-form-item>
+        <el-form-item label="证件号"><el-input placeholder="证件号" clearable /></el-form-item>
+        <el-form-item label="门诊/住院号"><el-input placeholder="门诊号 / 住院号" clearable /></el-form-item>
+        <el-form-item label="手机号"><el-input placeholder="手机号" clearable /></el-form-item>
+        <el-form-item><el-button type="primary" :icon="Search">查询HIS</el-button></el-form-item>
+      </el-form>
+      <el-table :data="seedRows.slice(0, 4)" border stripe>
+        <el-table-column prop="name" label="姓名" width="110" />
+        <el-table-column prop="gender" label="性别" width="80" />
+        <el-table-column prop="age" label="年龄" width="80" />
+        <el-table-column prop="idCard" label="证件号" min-width="170" />
+        <el-table-column prop="phone" label="手机号" min-width="130" />
+        <el-table-column prop="outpatientNo" label="门诊号" width="120" />
+        <el-table-column prop="hospitalDept" label="最近科室" min-width="180" />
+        <el-table-column prop="status" label="匹配状态" width="110" />
+        <el-table-column label="操作" width="140" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="importHisPatient(row)">关联导入</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="hisImportDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="batchImportDialogVisible" title="批量导入患者" width="760px">
+      <el-alert type="info" show-icon :closable="false" title="支持Excel模板导入，导入结果分为成功、待复核和失败三类，失败行可导出。"></el-alert>
+      <el-form label-width="110px" class="dialog-form">
+        <el-form-item label="导入模板"><el-button :icon="Download">下载模板</el-button></el-form-item>
+        <el-form-item label="上传文件"><el-upload :auto-upload="false" :limit="1" drag><el-icon><Upload /></el-icon><div class="el-upload__text">拖拽文件到这里或点击上传</div></el-upload></el-form-item>
+        <el-form-item label="导入说明"><el-input type="textarea" :rows="4" model-value="姓名、性别、出生日期/年龄、证件号、手机号、医保类型、联系人、地址等字段均可从Excel批量导入。" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchImportDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmBatchImport">开始导入</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="exportDialogVisible" title="导出患者数据" width="640px">
+      <el-checkbox-group v-model="exportOptions">
+        <el-checkbox label="当前列表" />
+        <el-checkbox label="筛选结果" />
+        <el-checkbox label="待补全患者" />
+        <el-checkbox label="导入失败明细" />
+        <el-checkbox label="复核差异清单" />
+      </el-checkbox-group>
+      <template #footer>
+        <el-button @click="exportDialogVisible = false">取消</el-button>
+        <el-button type="primary" :icon="Download" @click="exportDialogVisible = false; submitAction(`患者导出任务已生成：${exportOptions.join('、') || '当前列表'}，结果将按权限脱敏导出`)">确认导出</el-button>
+      </template>
+    </el-dialog>
 
     <el-drawer v-model="contactDrawerVisible" title="联系人与医保维护" size="600px">
       <el-form label-width="112px">
